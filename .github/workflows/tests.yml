@@ -10,6 +10,11 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Opt in to Node.js 24 for all JavaScript actions (Node 20 is deprecated;
+  # default switches on 2026-06-02 and Node 20 is removed 2026-09-16).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   test:
     name: pytest (Python ${{ matrix.python-version }} on ${{ matrix.os }})
