@@ -1,0 +1,125 @@
+[build-system]
+requires = ["hatchling>=1.21", "hatch-vcs>=0.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "podpislon-sdk"
+dynamic = ["version"]
+description = "Unofficial async Python SDK for the Podpislon (podpislon.ru) document signing API"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Nikita Belan", email = "nikitabelan9@gmail.com" }
+]
+keywords = [
+    "podpislon",
+    "sdk",
+    "async",
+    "documents",
+    "e-signature",
+    "esign",
+    "fastapi",
+    "aiogram",
+    "podpislon-sdk",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Office/Business",
+    "Typing :: Typed",
+    "Natural Language :: Russian",
+    "Natural Language :: English",
+]
+dependencies = [
+    "httpx>=0.25",
+    "pydantic>=2.5",
+    "typing-extensions>=4.7; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.100"]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "respx>=0.20",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/IceOne-i/podpislon-sdk"
+Documentation = "https://github.com/IceOne-i/podpislon-sdk#readme"
+Repository = "https://github.com/IceOne-i/podpislon-sdk"
+Issues = "https://github.com/IceOne-i/podpislon-sdk/issues"
+Changelog = "https://github.com/IceOne-i/podpislon-sdk/blob/main/CHANGELOG.md"
+"Podpislon API" = "https://api.podpislon.ru/"
+
+# ---------------------------------------------------------------------------
+# Hatch / hatch-vcs configuration
+# Version is derived from the latest git tag (vX.Y.Z) at build time, so a
+# `git tag v1.2.3 && git push --tags` automatically produces a 1.2.3 release.
+# ---------------------------------------------------------------------------
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/podpislon/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/podpislon",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/podpislon"]
+
+# ---------------------------------------------------------------------------
+# Tooling
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+source = ["podpislon"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "C4", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_unreachable = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
