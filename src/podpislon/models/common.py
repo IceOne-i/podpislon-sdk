@@ -24,6 +24,11 @@ class _PodpislonBase(BaseModel):
         extra="ignore",
         str_strip_whitespace=True,
         validate_assignment=True,
+        # The Podpislon API isn't always strict about types — for example,
+        # `signings` and INN/KPP have been seen returning plain ints. Letting
+        # pydantic coerce numeric scalars into str-typed fields keeps the SDK
+        # forward-compatible without surprising the caller.
+        coerce_numbers_to_str=True,
     )
 
 

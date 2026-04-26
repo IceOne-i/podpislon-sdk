@@ -9,6 +9,13 @@ Versions are derived automatically from git tags (`vX.Y.Z`) using `hatch-vcs`.
 
 ## [Unreleased]
 
+### Fixed
+- `CompanyInfo.signings` and `Company.inn` / `Company.kpp` now accept
+  integer payloads from the live API, not just strings — the production
+  endpoint was observed returning `signings: 10` instead of `"10"`. The
+  base model now sets `coerce_numbers_to_str=True`, and `signings`
+  additionally has an explicit pre-validator.
+
 ### Added
 - First public release of the unofficial async Python SDK for Podpislon.
 - `PodpislonClient` async client with resource accessors:
