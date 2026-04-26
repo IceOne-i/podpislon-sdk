@@ -1,7 +1,6 @@
 # podpislon-sdk
 
 [![PyPI version](https://img.shields.io/pypi/v/podpislon-sdk.svg)](https://pypi.org/project/podpislon-sdk/)
-[![Python versions](https://img.shields.io/pypi/pyversions/podpislon-sdk.svg)](https://pypi.org/project/podpislon-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/IceOne-i/podpislon-sdk/actions/workflows/tests.yml/badge.svg)](https://github.com/IceOne-i/podpislon-sdk/actions/workflows/tests.yml)
 [![PyPI publish](https://github.com/IceOne-i/podpislon-sdk/actions/workflows/publish.yml/badge.svg)](https://github.com/IceOne-i/podpislon-sdk/actions/workflows/publish.yml)
