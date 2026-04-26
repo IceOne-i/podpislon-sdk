@@ -198,12 +198,18 @@ class DocumentsResource(Resource):
         if extra_fields:
             base_payload.update(extra_fields)
 
+        # Despite the HTTP method, /add-document is NOT idempotent: every
+        # successful call creates a brand-new draft on Podpislon's side.
+        # Mark it explicitly so the retry policy refuses to replay it on
+        # 5xx or read-side errors — duplicating a draft would silently
+        # double-bill the customer's signing balance.
         if use_multipart:
             response = await self._transport.request(
                 "PUT",
                 "/add-document",
                 data=to_form_data(base_payload),
                 files=self._build_multipart_files(files, file_names),
+                idempotent=False,
             )
         else:
             base_payload["file"] = [encode_file_to_base64(f) for f in files]
@@ -212,6 +218,7 @@ class DocumentsResource(Resource):
                 "PUT",
                 "/add-document",
                 json=base_payload,
+                idempotent=False,
             )
 
         result = self._unwrap_status_envelope(response.json_body, expected_key="result")
@@ -271,10 +278,14 @@ class DocumentsResource(Resource):
         if contact:
             data["contact"] = contact
 
+        # /resend triggers an SMS to the signer; replaying on a 5xx could
+        # send the same SMS twice and bring the per-package resend counter
+        # closer to its limit (5).
         response = await self._transport.request(
             "POST",
             f"/resend/{package_id}",
             data=data or None,
+            idempotent=False,
         )
         body = response.json_body or {}
         if body.get("ok") is False:

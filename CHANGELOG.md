@@ -10,11 +10,36 @@ Versions are derived automatically from git tags (`vX.Y.Z`) using `hatch-vcs`.
 ## [Unreleased]
 
 ### Fixed
+- **Retry policy no longer duplicates documents on transient failures.**
+  `client.documents.add` is now marked non-idempotent (`idempotent=False`)
+  even though the API uses `PUT`, because every successful call creates a
+  new draft on Podpislon's side. With the old policy a 5xx or read-timeout
+  would trigger up to 3 retries, silently spawning duplicate drafts and
+  burning the customer's signing balance. The transport layer now follows
+  RFC 7231 retry semantics by default:
+  * idempotent methods (GET / HEAD / OPTIONS / PUT / DELETE) — full retry on
+    network errors, 5xx, 429;
+  * POST / PATCH / explicitly-marked non-idempotent calls — retry only on
+    connect-side errors and on `408` / `425` / `429` (statuses that prove
+    the server never processed the request);
+  * 5xx and read-timeouts on non-idempotent calls surface immediately.
+
+  `client.documents.resend` is also marked non-idempotent (the API sends an
+  SMS on every successful call). Pass `retry_non_idempotent=True` to
+  `PodpislonClient` to opt back into the legacy behaviour if you have your
+  own duplicate detection.
 - `CompanyInfo.signings` and `Company.inn` / `Company.kpp` now accept
   integer payloads from the live API, not just strings — the production
   endpoint was observed returning `signings: 10` instead of `"10"`. The
   base model now sets `coerce_numbers_to_str=True`, and `signings`
   additionally has an explicit pre-validator.
+
+### Added
+- `PodpislonClient(retry_non_idempotent=True)` — opt-in flag that restores
+  the previous "retry every transient failure" behaviour for callers with
+  their own idempotency-key tracking.
+- `RetryPolicy.should_retry_status` / `should_retry_exception` — building
+  blocks for custom retry policies.
 
 ### Added
 - First public release of the unofficial async Python SDK for Podpislon.

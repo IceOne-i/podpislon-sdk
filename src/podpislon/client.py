@@ -49,8 +49,21 @@ class PodpislonClient:
         Per-request timeout in seconds, or an :class:`httpx.Timeout` for
         fine-grained control.
     max_retries:
-        Number of retries for transient failures (``429``, ``5xx``, network
-        errors). Set to ``0`` to disable retries.
+        Number of retries for transient failures. Note that the SDK only
+        retries non-idempotent methods (``POST``, ``PATCH`` — including
+        ``documents.add``) when it can prove the server never processed
+        the original request: a connection-establishment error or a
+        ``408`` / ``425`` / ``429`` status. ``5xx`` and read-side errors
+        on ``POST`` are *not* retried, because Podpislon's
+        ``/add-document`` endpoint creates a new draft on every successful
+        call and a duplicate retry would clobber data. Idempotent methods
+        (``GET``, ``HEAD``, ``OPTIONS``, ``PUT``, ``DELETE``) keep the
+        full retry behaviour. Set to ``0`` to disable retries entirely.
+    retry_non_idempotent:
+        Opt back into retrying ``POST``/``PATCH`` on every transient
+        failure. Only safe when your codepath has its own duplicate
+        detection (e.g. an idempotency key tracked elsewhere). Default
+        is ``False``.
     rate_limit:
         Maximum requests per second to enforce client-side. The Podpislon API
         documents a 4 RPS limit per key; the SDK matches that by default.
@@ -70,6 +83,7 @@ class PodpislonClient:
         base_url: str = DEFAULT_BASE_URL,
         timeout: float | httpx.Timeout = DEFAULT_TIMEOUT,
         max_retries: int = 3,
+        retry_non_idempotent: bool = False,
         rate_limit: int | None = 4,
         user_agent: str = DEFAULT_USER_AGENT,
         http_client: httpx.AsyncClient | None = None,
@@ -87,7 +101,10 @@ class PodpislonClient:
             api_key=api_key,
             base_url=base_url,
             timeout=timeout,
-            retry_policy=RetryPolicy(max_retries=max_retries),
+            retry_policy=RetryPolicy(
+                max_retries=max_retries,
+                retry_non_idempotent=retry_non_idempotent,
+            ),
             rate_limiter=AsyncRateLimiter(rate_limit) if rate_limit else None,
             user_agent=user_agent,
             client=http_client,

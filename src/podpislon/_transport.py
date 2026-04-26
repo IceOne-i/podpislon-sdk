@@ -25,11 +25,47 @@ from podpislon.exceptions import (
 
 _LOGGER = logging.getLogger("podpislon")
 
+# Methods we consider safe to replay end-to-end. Per RFC 7231 these are
+# idempotent: if the server already processed the first attempt, replaying it
+# produces the same result. POST and PATCH are intentionally excluded — the
+# Podpislon /add-document endpoint is the canonical example of a non-
+# idempotent POST that creates a new draft on every successful call.
+_IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
+
+# Status codes that mean "the server didn't process the request" and are
+# therefore safe to retry on any method, including POST/PATCH. 429 (Too Many
+# Requests) is the headline case: the request was rejected before any side
+# effect could be applied.
+_ALWAYS_RETRY_STATUSES = frozenset({408, 425, 429})
+
 
 class RetryPolicy:
-    """Exponential-backoff retry policy for transient failures."""
+    """Exponential-backoff retry policy for transient failures.
 
-    __slots__ = ("max_retries", "backoff_factor", "max_backoff", "retry_on_statuses")
+    The policy distinguishes idempotent and non-idempotent HTTP methods:
+
+    * **GET / HEAD / OPTIONS / PUT / DELETE** — replayed on any transient
+      failure (network error, timeout, 5xx, 429, etc).
+    * **POST / PATCH** — replayed *only* when we can prove the server never
+      processed the original attempt: a connection-establishment error before
+      bytes were sent, or a status that indicates pre-handler rejection
+      (``408``, ``425``, ``429``). 5xx responses on POST are *not* retried —
+      the server may have already created the resource and a duplicate retry
+      would clobber data (e.g. a duplicate ``/add-document`` would create a
+      second draft).
+
+    Pass ``retry_non_idempotent=True`` to opt back into the legacy
+    "retry everything" behaviour for codepaths that have their own
+    idempotency keys or duplicate-detection.
+    """
+
+    __slots__ = (
+        "max_retries",
+        "backoff_factor",
+        "max_backoff",
+        "retry_on_statuses",
+        "retry_non_idempotent",
+    )
 
     def __init__(
         self,
@@ -38,6 +74,7 @@ class RetryPolicy:
         backoff_factor: float = 0.5,
         max_backoff: float = 30.0,
         retry_on_statuses: Sequence[int] = (429, 500, 502, 503, 504),
+        retry_non_idempotent: bool = False,
     ) -> None:
         if max_retries < 0:
             raise ValueError("max_retries must be >= 0")
@@ -49,6 +86,7 @@ class RetryPolicy:
         self.backoff_factor = backoff_factor
         self.max_backoff = max_backoff
         self.retry_on_statuses = tuple(retry_on_statuses)
+        self.retry_non_idempotent = retry_non_idempotent
 
     def compute_delay(self, attempt: int, retry_after: float | None = None) -> float:
         """Wait at least ``retry_after`` seconds, otherwise back off exponentially.
@@ -62,6 +100,54 @@ class RetryPolicy:
         base = self.backoff_factor * (2**attempt)
         jitter = random.uniform(0.75, 1.25)
         return min(base * jitter, self.max_backoff)
+
+    def _is_idempotent(self, method: str, idempotent: bool | None) -> bool:
+        if idempotent is not None:
+            return idempotent
+        return method.upper() in _IDEMPOTENT_METHODS
+
+    def should_retry_status(
+        self,
+        method: str,
+        status_code: int,
+        *,
+        idempotent: bool | None = None,
+    ) -> bool:
+        """Return True if a response with ``status_code`` is safe to retry.
+
+        ``idempotent`` overrides the method-based heuristic. Pass ``False``
+        for endpoints that violate HTTP semantics — e.g. Podpislon's
+        ``PUT /add-document`` that creates a new draft on every call.
+        """
+
+        if status_code not in self.retry_on_statuses:
+            return False
+        if status_code in _ALWAYS_RETRY_STATUSES:
+            return True
+        if self.retry_non_idempotent:
+            return True
+        return self._is_idempotent(method, idempotent)
+
+    def should_retry_exception(
+        self,
+        method: str,
+        exc: BaseException,
+        *,
+        idempotent: bool | None = None,
+    ) -> bool:
+        """Return True if a transport-level exception is safe to retry.
+
+        For non-idempotent calls we only retry on errors that occur *before*
+        we send any bytes — :class:`httpx.ConnectError` and
+        :class:`httpx.ConnectTimeout`. Anything that fires after the request
+        is on the wire (read timeout, broken pipe, etc.) might mean the
+        server already processed the request, so replaying it would risk a
+        duplicate side effect.
+        """
+
+        if self.retry_non_idempotent or self._is_idempotent(method, idempotent):
+            return True
+        return isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout))
 
 
 class Transport:
@@ -129,8 +215,14 @@ class Transport:
         files: Mapping[str, Any] | Sequence[tuple[str, Any]] | None = None,
         params: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
+        idempotent: bool | None = None,
     ) -> "Response":
-        """Issue an HTTP request and return the parsed response."""
+        """Issue an HTTP request and return the parsed response.
+
+        ``idempotent`` overrides the default method-based retry heuristic.
+        Pass ``False`` for resource methods that have observable side effects
+        on every successful call (e.g. ``PUT /add-document``).
+        """
 
         url = path if path.startswith(("http://", "https://")) else path
         attempt = 0
@@ -162,7 +254,11 @@ class Transport:
             except httpx.TimeoutException as exc:
                 last_exc = exc
                 _LOGGER.debug("Timeout on %s %s (attempt %d)", method, url, attempt)
-                if attempt >= self._retry_policy.max_retries:
+                if attempt >= self._retry_policy.max_retries or not (
+                    self._retry_policy.should_retry_exception(
+                        method, exc, idempotent=idempotent
+                    )
+                ):
                     raise PodpislonTransportError(f"Request timed out: {exc}") from exc
                 await asyncio.sleep(self._retry_policy.compute_delay(attempt))
                 attempt += 1
@@ -172,7 +268,11 @@ class Transport:
                 _LOGGER.debug(
                     "Transport error on %s %s (attempt %d): %s", method, url, attempt, exc
                 )
-                if attempt >= self._retry_policy.max_retries:
+                if attempt >= self._retry_policy.max_retries or not (
+                    self._retry_policy.should_retry_exception(
+                        method, exc, idempotent=idempotent
+                    )
+                ):
                     raise PodpislonTransportError(str(exc)) from exc
                 await asyncio.sleep(self._retry_policy.compute_delay(attempt))
                 attempt += 1
@@ -181,8 +281,10 @@ class Transport:
             status = http_response.status_code
 
             if (
-                status in self._retry_policy.retry_on_statuses
-                and attempt < self._retry_policy.max_retries
+                attempt < self._retry_policy.max_retries
+                and self._retry_policy.should_retry_status(
+                    method, status, idempotent=idempotent
+                )
             ):
                 retry_after = _parse_retry_after(http_response.headers)
                 delay = self._retry_policy.compute_delay(attempt, retry_after)
