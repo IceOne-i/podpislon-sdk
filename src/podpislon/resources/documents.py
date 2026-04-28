@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 from typing import Any, AsyncIterator, List, Mapping, Optional, Sequence, Union
 
@@ -328,14 +329,24 @@ class DocumentsResource(Resource):
         files: Sequence[FileLike],
         file_names: Optional[Sequence[str]] = None,
     ) -> list[tuple[str, tuple[str, bytes, str]]]:
-        """Materialise ``files`` into the tuple form expected by httpx."""
+        """Materialise ``files`` into the tuple form expected by httpx.
+
+        The Podpislon API only accepts PDF (per the OpenAPI spec); we still
+        derive the per-part Content-Type from the filename via
+        ``mimetypes.guess_type`` so a non-PDF upload is labelled honestly
+        instead of being mis-tagged ``application/pdf``. That way the
+        upstream's content-type validation can reject it instead of
+        silently storing an empty document.
+        """
 
         names = list(DocumentsResource._resolve_file_names(files, file_names))
         result: list[tuple[str, tuple[str, bytes, str]]] = []
         for index, source in enumerate(files):
             data = _read_file_bytes(source)
             field_name = "file[]"  # Yii-flavoured array field name
-            result.append((field_name, (names[index], data, "application/pdf")))
+            guessed, _ = mimetypes.guess_type(names[index])
+            content_type = guessed or "application/pdf"
+            result.append((field_name, (names[index], data, content_type)))
         return result
 
     @staticmethod
