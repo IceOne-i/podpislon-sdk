@@ -9,6 +9,11 @@ Versions are derived automatically from git tags (`vX.Y.Z`) using `hatch-vcs`.
 
 ## [Unreleased]
 
+### Changed
+- Updated minimum runtime, build and development dependency versions.
+- Python 3.11 is now the minimum supported version; added Python 3.14 support
+  and switched the development workflow to `uv`.
+
 ### Fixed
 - **Retry policy no longer duplicates documents on transient failures.**
   `client.documents.add` is now marked non-idempotent (`idempotent=False`)

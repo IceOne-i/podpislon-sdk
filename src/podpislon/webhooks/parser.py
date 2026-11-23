@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Mapping, Union
+from collections.abc import Mapping
 from urllib.parse import parse_qs
 
 from podpislon.enums import WebhookEventType
@@ -13,19 +13,19 @@ from podpislon.models.webhook import (
     DocumentSignedEvent,
 )
 
-WebhookPayload = Union[bytes, str, Mapping[str, object]]
+WebhookPayload = bytes | str | Mapping[str, object]
 """Anything we know how to turn into a webhook event."""
 
-EVENT_TO_MODEL = {
+EventModel = DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent
+
+EVENT_TO_MODEL: dict[WebhookEventType, type[EventModel]] = {
     WebhookEventType.DOCUMENT_OPENED: DocumentOpenedEvent,
     WebhookEventType.DOCUMENT_SIGNED: DocumentSignedEvent,
     WebhookEventType.CLIENT_DATA_REQUEST_SUBMITTED: ClientDataRequestSubmittedEvent,
 }
 
 
-def parse_event(
-    payload: WebhookPayload,
-) -> Union[DocumentOpenedEvent, DocumentSignedEvent, ClientDataRequestSubmittedEvent]:
+def parse_event(payload: WebhookPayload) -> EventModel:
     """Convert an incoming webhook body into a typed event.
 
     Accepts the wire formats Podpislon actually uses:
@@ -44,9 +44,7 @@ def parse_event(
     try:
         event_type = WebhookEventType(event_value)
     except ValueError as exc:
-        raise PodpislonUnknownEventError(
-            f"Unknown webhook event type: {event_value!r}"
-        ) from exc
+        raise PodpislonUnknownEventError(f"Unknown webhook event type: {event_value!r}") from exc
 
     model_cls = EVENT_TO_MODEL[event_type]
     return model_cls.model_validate(fields)
@@ -63,9 +61,7 @@ def _normalise(payload: WebhookPayload) -> dict[str, str]:
     elif isinstance(payload, str):
         text = payload
     else:  # pragma: no cover - defensive
-        raise TypeError(
-            f"Unsupported webhook payload type: {type(payload).__name__}"
-        )
+        raise TypeError(f"Unsupported webhook payload type: {type(payload).__name__}")
 
     parsed = parse_qs(text, keep_blank_values=True, strict_parsing=False)
     # parse_qs returns list[str] per key — collapse to the first value because

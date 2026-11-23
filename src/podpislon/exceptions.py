@@ -9,7 +9,8 @@ the SDK easy to integrate with existing error-handling code.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 
 class PodpislonError(Exception):
@@ -129,25 +130,17 @@ def raise_for_status(
     }
 
     if status_code == 401:
-        raise PodpislonAuthenticationError(
-            f"Authentication failed: {body_repr}", **common_kwargs
-        )
+        raise PodpislonAuthenticationError(f"Authentication failed: {body_repr}", **common_kwargs)
     if status_code == 403:
-        raise PodpislonPermissionError(
-            f"Permission denied: {body_repr}", **common_kwargs
-        )
+        raise PodpislonPermissionError(f"Permission denied: {body_repr}", **common_kwargs)
     if status_code == 404:
         raise PodpislonNotFoundError(f"Not found: {body_repr}", **common_kwargs)
     if status_code == 429:
         retry_after = _parse_retry_after(headers)
         raise PodpislonRateLimitError(retry_after=retry_after, **common_kwargs)
     if 500 <= status_code < 600:
-        raise PodpislonServerError(
-            f"Server error: {body_repr}", **common_kwargs
-        )
-    raise PodpislonAPIError(
-        f"Unexpected HTTP {status_code}: {body_repr}", **common_kwargs
-    )
+        raise PodpislonServerError(f"Server error: {body_repr}", **common_kwargs)
+    raise PodpislonAPIError(f"Unexpected HTTP {status_code}: {body_repr}", **common_kwargs)
 
 
 def _short_repr(body: Any) -> str:

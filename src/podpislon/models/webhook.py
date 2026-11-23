@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -44,7 +44,7 @@ class ClientDataRequestSubmittedEvent(_BaseEvent):
 
 
 WebhookEvent = Annotated[
-    Union[DocumentOpenedEvent, DocumentSignedEvent, ClientDataRequestSubmittedEvent],
+    DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent,
     Field(discriminator="event"),
 ]
 """Discriminated union of all known webhook events.

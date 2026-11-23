@@ -19,7 +19,7 @@ well-loved Python SDK (``stripe.Customer``, ``boto3.client(...).list_*``).
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, Type
+from typing import Any
 
 import httpx
 
@@ -117,12 +117,12 @@ class PodpislonClient:
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
-    async def __aenter__(self) -> "PodpislonClient":
+    async def __aenter__(self) -> PodpislonClient:
         return self
 
     async def __aexit__(
         self,
-        exc_type: Type[BaseException] | None,
+        exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:

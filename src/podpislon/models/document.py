@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import Field, field_validator
 
@@ -15,39 +16,39 @@ from podpislon.models.contact import Contact
 class Filter(_PodpislonBase):
     """Search filter for ``POST /`` (list documents)."""
 
-    fio: Optional[str] = Field(default=None, description="Full-text search by name (ФИО).")
-    dates: Optional[Dict[str, str]] = Field(
+    fio: str | None = Field(default=None, description="Full-text search by name (ФИО).")
+    dates: dict[str, str] | None = Field(
         default=None,
         description=(
             'Unix-timestamp range. Allowed keys: ">", ">=", "<", "<=" '
-            '— combine to express open or closed intervals.'
+            "— combine to express open or closed intervals."
         ),
     )
-    status: Optional[DocumentStatus] = Field(default=None, description="Document status filter.")
-    phone: Optional[str] = Field(default=None, description="Phone number, digits-only is fine.")
+    status: DocumentStatus | None = Field(default=None, description="Document status filter.")
+    phone: str | None = Field(default=None, description="Phone number, digits-only is fine.")
 
 
 class Document(_PodpislonBase):
     """A single document returned from ``POST /``."""
 
     id: int
-    name: Optional[str] = None
-    status: Optional[DocumentStatus] = None
-    status_text: Optional[str] = Field(
+    name: str | None = None
+    status: DocumentStatus | None = None
+    status_text: str | None = Field(
         default=None,
         description='Localised status string (e.g. "Подписан").',
     )
-    sms: Optional[str] = Field(default=None, description="One-time SMS code, when applicable.")
-    date_create: Optional[datetime] = Field(
+    sms: str | None = Field(default=None, description="One-time SMS code, when applicable.")
+    date_create: datetime | None = Field(
         default=None,
         description="Document creation timestamp (UTC).",
     )
-    contact: Optional[Contact] = Field(
+    contact: Contact | None = Field(
         default=None,
         description='Deprecated: prefer "contacts".',
     )
-    contacts: List[Contact] = Field(default_factory=list)
-    package: Optional[str] = Field(
+    contacts: list[Contact] = Field(default_factory=list)
+    package: str | None = Field(
         default=None,
         description="Package identifier; needed by /resend/{package_id}.",
     )
@@ -65,10 +66,10 @@ class Document(_PodpislonBase):
 class PaginatedDocuments(_PodpislonBase):
     """Paginated wrapper produced by :meth:`DocumentsResource.list`."""
 
-    items: List[Document] = Field(default_factory=list)
+    items: list[Document] = Field(default_factory=list)
     pagination: PaginationMeta = Field(default_factory=PaginationMeta)
 
-    def __iter__(self):  # type: ignore[override]
+    def __iter__(self) -> Iterator[Document]:  # type: ignore[override]
         return iter(self.items)
 
     def __len__(self) -> int:
@@ -92,11 +93,11 @@ class AddDocumentResult(_PodpislonBase):
     is always a list, ``links`` is empty unless the no-SMS branch was used.
     """
 
-    ids: List[int] = Field(default_factory=list)
-    links: List[str] = Field(default_factory=list)
+    ids: list[int] = Field(default_factory=list)
+    links: list[str] = Field(default_factory=list)
 
     @classmethod
-    def from_api(cls, raw: Any) -> "AddDocumentResult":
+    def from_api(cls, raw: Any) -> AddDocumentResult:
         if isinstance(raw, int):
             return cls(ids=[raw])
         if isinstance(raw, list):
@@ -108,9 +109,9 @@ class AddDocumentResult(_PodpislonBase):
         raise TypeError(f"Unexpected add-document result shape: {type(raw).__name__}")
 
     @property
-    def first_id(self) -> Optional[int]:
+    def first_id(self) -> int | None:
         return self.ids[0] if self.ids else None
 
     @property
-    def first_link(self) -> Optional[str]:
+    def first_link(self) -> str | None:
         return self.links[0] if self.links else None

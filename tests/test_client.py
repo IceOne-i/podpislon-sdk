@@ -67,9 +67,7 @@ async def test_500_raises_server_error(client: PodpislonClient, mock_api) -> Non
         await client.company.get_info()
 
 
-async def test_request_escape_hatch_returns_raw_json(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_request_escape_hatch_returns_raw_json(client: PodpislonClient, mock_api) -> None:
     mock_api.get("/get-info").mock(return_value=httpx.Response(200, json={"hello": "world"}))
     body = await client.request("GET", "/get-info")
     assert body == {"hello": "world"}

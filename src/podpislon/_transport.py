@@ -10,7 +10,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 import httpx
 
@@ -60,11 +61,11 @@ class RetryPolicy:
     """
 
     __slots__ = (
-        "max_retries",
         "backoff_factor",
         "max_backoff",
-        "retry_on_statuses",
+        "max_retries",
         "retry_non_idempotent",
+        "retry_on_statuses",
     )
 
     def __init__(
@@ -99,7 +100,7 @@ class RetryPolicy:
             return min(retry_after, self.max_backoff)
         base = self.backoff_factor * (2**attempt)
         jitter = random.uniform(0.75, 1.25)
-        return min(base * jitter, self.max_backoff)
+        return float(min(base * jitter, self.max_backoff))
 
     def _is_idempotent(self, method: str, idempotent: bool | None) -> bool:
         if idempotent is not None:
@@ -216,7 +217,7 @@ class Transport:
         params: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
         idempotent: bool | None = None,
-    ) -> "Response":
+    ) -> Response:
         """Issue an HTTP request and return the parsed response.
 
         ``idempotent`` overrides the default method-based retry heuristic.
@@ -224,9 +225,8 @@ class Transport:
         on every successful call (e.g. ``PUT /add-document``).
         """
 
-        url = path if path.startswith(("http://", "https://")) else path
+        url = path
         attempt = 0
-        last_exc: Exception | None = None
 
         while True:
             try:
@@ -252,26 +252,20 @@ class Transport:
                         headers=headers,
                     )
             except httpx.TimeoutException as exc:
-                last_exc = exc
                 _LOGGER.debug("Timeout on %s %s (attempt %d)", method, url, attempt)
                 if attempt >= self._retry_policy.max_retries or not (
-                    self._retry_policy.should_retry_exception(
-                        method, exc, idempotent=idempotent
-                    )
+                    self._retry_policy.should_retry_exception(method, exc, idempotent=idempotent)
                 ):
                     raise PodpislonTransportError(f"Request timed out: {exc}") from exc
                 await asyncio.sleep(self._retry_policy.compute_delay(attempt))
                 attempt += 1
                 continue
             except httpx.TransportError as exc:
-                last_exc = exc
                 _LOGGER.debug(
                     "Transport error on %s %s (attempt %d): %s", method, url, attempt, exc
                 )
                 if attempt >= self._retry_policy.max_retries or not (
-                    self._retry_policy.should_retry_exception(
-                        method, exc, idempotent=idempotent
-                    )
+                    self._retry_policy.should_retry_exception(method, exc, idempotent=idempotent)
                 ):
                     raise PodpislonTransportError(str(exc)) from exc
                 await asyncio.sleep(self._retry_policy.compute_delay(attempt))
@@ -280,11 +274,8 @@ class Transport:
 
             status = http_response.status_code
 
-            if (
-                attempt < self._retry_policy.max_retries
-                and self._retry_policy.should_retry_status(
-                    method, status, idempotent=idempotent
-                )
+            if attempt < self._retry_policy.max_retries and self._retry_policy.should_retry_status(
+                method, status, idempotent=idempotent
             ):
                 retry_after = _parse_retry_after(http_response.headers)
                 delay = self._retry_policy.compute_delay(attempt, retry_after)
@@ -316,16 +307,11 @@ class Transport:
 
             return response
 
-        # Unreachable, but mypy/typing wants an explicit raise.
-        if last_exc is not None:  # pragma: no cover
-            raise PodpislonTransportError(str(last_exc)) from last_exc
-        raise PodpislonTransportError("Unknown transport error")  # pragma: no cover
-
 
 class Response:
     """Lightweight wrapper that exposes JSON / headers / status without httpx leaking out."""
 
-    __slots__ = ("status_code", "headers", "text", "_json_body", "_is_json", "request_id")
+    __slots__ = ("_is_json", "_json_body", "headers", "request_id", "status_code", "text")
 
     def __init__(
         self,
@@ -353,7 +339,7 @@ class Response:
         return self._is_json
 
     @classmethod
-    def from_httpx(cls, response: httpx.Response) -> "Response":
+    def from_httpx(cls, response: httpx.Response) -> Response:
         content_type = response.headers.get("content-type", "")
         is_json = "application/json" in content_type.lower()
         json_body: Any = None

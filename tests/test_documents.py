@@ -21,9 +21,7 @@ from podpislon import (
 # ---------------------------------------------------------------------------
 # list / iter_all
 # ---------------------------------------------------------------------------
-async def test_list_returns_documents_with_pagination(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_list_returns_documents_with_pagination(client: PodpislonClient, mock_api) -> None:
     mock_api.post("/").mock(
         return_value=httpx.Response(
             200,
@@ -57,12 +55,8 @@ async def test_list_returns_documents_with_pagination(
     assert page.has_next is True
 
 
-async def test_list_with_filter_sends_request_body(
-    client: PodpislonClient, mock_api
-) -> None:
-    route = mock_api.post("/").mock(
-        return_value=httpx.Response(200, json=[], headers={})
-    )
+async def test_list_with_filter_sends_request_body(client: PodpislonClient, mock_api) -> None:
+    route = mock_api.post("/").mock(return_value=httpx.Response(200, json=[], headers={}))
 
     await client.documents.list(
         page=2,
@@ -111,9 +105,7 @@ async def test_iter_all_walks_every_page(client: PodpislonClient, mock_api) -> N
 # ---------------------------------------------------------------------------
 async def test_add_requires_files(client: PodpislonClient) -> None:
     with pytest.raises(PodpislonValidationError):
-        await client.documents.add(
-            name="Иван", last_name="Иванов", phone="+79999999999", files=[]
-        )
+        await client.documents.add(name="Иван", last_name="Иванов", phone="+79999999999", files=[])
 
 
 async def test_add_returns_single_id(client: PodpislonClient, mock_api) -> None:
@@ -228,9 +220,7 @@ async def test_add_with_extra_fields(client: PodpislonClient, mock_api) -> None:
 
 async def test_add_status_false_raises(client: PodpislonClient, mock_api) -> None:
     mock_api.put("/add-document").mock(
-        return_value=httpx.Response(
-            200, json={"status": False, "mess": "Insufficient balance"}
-        )
+        return_value=httpx.Response(200, json={"status": False, "mess": "Insufficient balance"})
     )
 
     with pytest.raises(PodpislonAPIError):
@@ -245,9 +235,7 @@ async def test_add_status_false_raises(client: PodpislonClient, mock_api) -> Non
 # ---------------------------------------------------------------------------
 # get_file
 # ---------------------------------------------------------------------------
-async def test_get_file_returns_decoded_bytes(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_get_file_returns_decoded_bytes(client: PodpislonClient, mock_api) -> None:
     encoded = base64.b64encode(b"%PDF-1.4 hello").decode("ascii")
     mock_api.post("/get-file").mock(
         return_value=httpx.Response(200, json={"status": True, "result": encoded})
@@ -267,9 +255,7 @@ async def test_get_file_can_skip_decoding(client: PodpislonClient, mock_api) -> 
     assert data == encoded
 
 
-async def test_save_file_writes_to_disk(
-    client: PodpislonClient, mock_api, tmp_path: Path
-) -> None:
+async def test_save_file_writes_to_disk(client: PodpislonClient, mock_api, tmp_path: Path) -> None:
     encoded = base64.b64encode(b"%PDF-1.4").decode("ascii")
     mock_api.post("/get-file").mock(
         return_value=httpx.Response(200, json={"status": True, "result": encoded})
@@ -289,9 +275,7 @@ async def test_get_file_validates_file_id(client: PodpislonClient) -> None:
 # ---------------------------------------------------------------------------
 # resend / delete
 # ---------------------------------------------------------------------------
-async def test_resend_sends_contact_in_body(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_resend_sends_contact_in_body(client: PodpislonClient, mock_api) -> None:
     route = mock_api.post("/resend/cb4b683").mock(
         return_value=httpx.Response(200, json={"ok": True})
     )

@@ -10,9 +10,10 @@ import asyncio
 import base64
 import time
 from collections import deque
+from collections.abc import AsyncIterator, Iterable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncIterator, Iterable, Mapping, Sequence
+from typing import Any
 
 
 class AsyncRateLimiter:
@@ -101,7 +102,7 @@ def _flatten(key: str, value: Any, out: dict[str, Any]) -> None:
     if isinstance(value, Mapping):
         for sub_key, sub_value in value.items():
             _flatten(f"{key}[{sub_key}]", sub_value, out)
-    elif isinstance(value, (list, tuple, set)) and not isinstance(value, (str, bytes, bytearray)):
+    elif isinstance(value, (list, tuple, set)):
         for index, item in enumerate(value):
             _flatten(f"{key}[{index}]", item, out)
     elif isinstance(value, bool):

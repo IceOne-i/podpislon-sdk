@@ -19,8 +19,7 @@ class Contact(_PodpislonBase):
     phone: str = Field(
         ...,
         description=(
-            "Phone in one of: +7 (XXX) XXX-XX-XX, 8 (XXX) XXX-XX-XX, "
-            "8XXXXXXXXXX, +7XXXXXXXXXX"
+            "Phone in one of: +7 (XXX) XXX-XX-XX, 8 (XXX) XXX-XX-XX, 8XXXXXXXXXX, +7XXXXXXXXXX"
         ),
     )
     sid: str | None = Field(

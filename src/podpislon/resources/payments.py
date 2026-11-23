@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from podpislon.models.payment import PaymentSystem
 from podpislon.resources._base import Resource
 
@@ -11,7 +9,7 @@ from podpislon.resources._base import Resource
 class PaymentsResource(Resource):
     """Wraps ``GET /pay-systems``."""
 
-    async def list_systems(self) -> List[PaymentSystem]:
+    async def list_systems(self) -> list[PaymentSystem]:
         """Return every payment system enabled for the company."""
 
         response = await self._transport.request("GET", "/pay-systems")
