@@ -41,6 +41,7 @@ _STATUS_DESCRIPTIONS: dict[DocumentStatus, str] = {
 class WebhookEventType(StrEnum):
     """Event types delivered to your webhook endpoint."""
 
+    DOCUMENT_SENT = "DOCUMENT_SENT"
     DOCUMENT_OPENED = "DOCUMENT_OPENED"
     DOCUMENT_SIGNED = "DOCUMENT_SIGNED"
     CLIENT_DATA_REQUEST_SUBMITTED = "CLIENT_DATA_REQUEST_SUBMITTED"

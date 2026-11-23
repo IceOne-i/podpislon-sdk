@@ -18,6 +18,13 @@ class _BaseEvent(_PodpislonBase):
     signature: str = Field(alias="SIGNATURE")
 
 
+class DocumentSentEvent(_BaseEvent):
+    """Fires when a document is sent to its recipients for signing."""
+
+    event: Literal[WebhookEventType.DOCUMENT_SENT] = Field(alias="EVENT")
+    file_id: int = Field(alias="FILE_ID")
+
+
 class DocumentOpenedEvent(_BaseEvent):
     """Fires when a recipient opens the signing link."""
 
@@ -44,7 +51,7 @@ class ClientDataRequestSubmittedEvent(_BaseEvent):
 
 
 WebhookEvent = Annotated[
-    DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent,
+    DocumentSentEvent | DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent,
     Field(discriminator="event"),
 ]
 """Discriminated union of all known webhook events.

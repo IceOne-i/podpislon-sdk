@@ -40,6 +40,8 @@ Versions are derived automatically from git tags (`vX.Y.Z`) using `hatch-vcs`.
   additionally has an explicit pre-validator.
 
 ### Added
+- `DOCUMENT_SENT` webhook support via `WebhookEventType.DOCUMENT_SENT` and
+  `DocumentSentEvent`, including typed handler dispatch.
 - `PodpislonClient(retry_non_idempotent=True)` — opt-in flag that restores
   the previous "retry every transient failure" behaviour for callers with
   their own idempotency-key tracking.

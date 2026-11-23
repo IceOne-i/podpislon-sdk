@@ -10,15 +10,19 @@ from podpislon.exceptions import PodpislonUnknownEventError, PodpislonWebhookErr
 from podpislon.models.webhook import (
     ClientDataRequestSubmittedEvent,
     DocumentOpenedEvent,
+    DocumentSentEvent,
     DocumentSignedEvent,
 )
 
 WebhookPayload = bytes | str | Mapping[str, object]
 """Anything we know how to turn into a webhook event."""
 
-EventModel = DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent
+EventModel = (
+    DocumentSentEvent | DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent
+)
 
 EVENT_TO_MODEL: dict[WebhookEventType, type[EventModel]] = {
+    WebhookEventType.DOCUMENT_SENT: DocumentSentEvent,
     WebhookEventType.DOCUMENT_OPENED: DocumentOpenedEvent,
     WebhookEventType.DOCUMENT_SIGNED: DocumentSignedEvent,
     WebhookEventType.CLIENT_DATA_REQUEST_SUBMITTED: ClientDataRequestSubmittedEvent,

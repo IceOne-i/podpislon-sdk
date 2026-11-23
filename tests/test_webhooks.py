@@ -10,6 +10,7 @@ import pytest
 from podpislon import (
     ClientDataRequestSubmittedEvent,
     DocumentOpenedEvent,
+    DocumentSentEvent,
     DocumentSignedEvent,
     PodpislonUnknownEventError,
     PodpislonWebhookError,
@@ -29,6 +30,16 @@ def test_parse_document_signed_from_form_bytes() -> None:
     event = parse_event(body)
     assert isinstance(event, DocumentSignedEvent)
     assert event.event is WebhookEventType.DOCUMENT_SIGNED
+    assert event.file_id == 1234
+    assert event.company_id == 12
+    assert event.signature == "1a2b3c4d5e6f"
+
+
+def test_parse_document_sent_from_form_bytes() -> None:
+    body = b"EVENT=DOCUMENT_SENT&FILE_ID=1234&COMPANY_ID=12&SIGNATURE=1a2b3c4d5e6f"
+    event = parse_event(body)
+    assert isinstance(event, DocumentSentEvent)
+    assert event.event is WebhookEventType.DOCUMENT_SENT
     assert event.file_id == 1234
     assert event.company_id == 12
     assert event.signature == "1a2b3c4d5e6f"
@@ -86,6 +97,20 @@ async def test_handler_dispatches_to_typed_listener() -> None:
     event = await handler.dispatch(body)
 
     assert isinstance(event, DocumentSignedEvent)
+    assert seen == [1234]
+
+
+async def test_handler_dispatches_document_sent() -> None:
+    handler = WebhookHandler()
+    seen: list[int] = []
+
+    @handler.on(WebhookEventType.DOCUMENT_SENT)
+    async def on_sent(event: DocumentSentEvent) -> None:
+        seen.append(event.file_id)
+
+    event = await handler.dispatch(b"EVENT=DOCUMENT_SENT&FILE_ID=1234&COMPANY_ID=12&SIGNATURE=x")
+
+    assert isinstance(event, DocumentSentEvent)
     assert seen == [1234]
 
 

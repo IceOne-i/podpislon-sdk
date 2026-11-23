@@ -19,11 +19,14 @@ from podpislon.exceptions import PodpislonWebhookSignatureError
 from podpislon.models.webhook import (
     ClientDataRequestSubmittedEvent,
     DocumentOpenedEvent,
+    DocumentSentEvent,
     DocumentSignedEvent,
 )
 from podpislon.webhooks.parser import WebhookPayload, parse_event
 
-EventModel = DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent
+EventModel = (
+    DocumentSentEvent | DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent
+)
 EventHandler = Callable[[EventModel], Awaitable[None] | None]
 
 _LOGGER = logging.getLogger("podpislon.webhooks")

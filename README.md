@@ -298,10 +298,11 @@ print(event.event)     # WebhookEventType.DOCUMENT_SIGNED
 print(event.file_id)   # 1234
 ```
 
-Поддерживаются все три типа событий из спецификации:
+Поддерживаются четыре типа событий:
 
 | Событие                              | Модель                              |
 | ------------------------------------ | ----------------------------------- |
+| `DOCUMENT_SENT`                      | `DocumentSentEvent`                 |
 | `DOCUMENT_OPENED`                    | `DocumentOpenedEvent`               |
 | `DOCUMENT_SIGNED`                    | `DocumentSignedEvent`               |
 | `CLIENT_DATA_REQUEST_SUBMITTED`      | `ClientDataRequestSubmittedEvent`   |

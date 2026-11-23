@@ -46,6 +46,7 @@ from podpislon.models import (
     Contact,
     Document,
     DocumentOpenedEvent,
+    DocumentSentEvent,
     DocumentSignedEvent,
     Filter,
     PaginatedDocuments,
@@ -71,6 +72,7 @@ __all__ = [
     "Contact",
     "Document",
     "DocumentOpenedEvent",
+    "DocumentSentEvent",
     "DocumentSignedEvent",
     # Enums
     "DocumentStatus",

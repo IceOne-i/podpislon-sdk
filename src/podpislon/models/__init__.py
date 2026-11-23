@@ -13,6 +13,7 @@ from podpislon.models.payment import Payment, PaymentSystem
 from podpislon.models.webhook import (
     ClientDataRequestSubmittedEvent,
     DocumentOpenedEvent,
+    DocumentSentEvent,
     DocumentSignedEvent,
     WebhookEvent,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "Contact",
     "Document",
     "DocumentOpenedEvent",
+    "DocumentSentEvent",
     "DocumentSignedEvent",
     "Filter",
     "PaginatedDocuments",
