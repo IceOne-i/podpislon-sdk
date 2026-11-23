@@ -57,16 +57,11 @@ from podpislon.models import (
 from podpislon.webhooks import WebhookHandler, WebhookSignatureVerifier, parse_event
 
 try:
-    from podpislon._version import __version__  # type: ignore[import-not-found]
+    from podpislon._version import __version__
 except ImportError:  # pragma: no cover - source checkout without build step
     __version__ = "0.0.0+unknown"
 
 __all__ = [
-    # Client
-    "PodpislonClient",
-    # Enums
-    "DocumentStatus",
-    "WebhookEventType",
     # Models
     "APIResponse",
     "AddDocumentResult",
@@ -77,19 +72,18 @@ __all__ = [
     "Document",
     "DocumentOpenedEvent",
     "DocumentSignedEvent",
+    # Enums
+    "DocumentStatus",
     "Filter",
     "PaginatedDocuments",
     "PaginationMeta",
     "Payment",
     "PaymentSystem",
-    "WebhookEvent",
-    # Webhooks
-    "WebhookHandler",
-    "WebhookSignatureVerifier",
-    "parse_event",
     # Exceptions
     "PodpislonAPIError",
     "PodpislonAuthenticationError",
+    # Client
+    "PodpislonClient",
     "PodpislonConfigurationError",
     "PodpislonError",
     "PodpislonNotFoundError",
@@ -101,6 +95,12 @@ __all__ = [
     "PodpislonValidationError",
     "PodpislonWebhookError",
     "PodpislonWebhookSignatureError",
+    "WebhookEvent",
+    "WebhookEventType",
+    # Webhooks
+    "WebhookHandler",
+    "WebhookSignatureVerifier",
     # Version
     "__version__",
+    "parse_event",
 ]

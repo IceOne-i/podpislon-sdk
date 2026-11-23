@@ -32,9 +32,7 @@ async def test_get_info_returns_company(client: PodpislonClient, mock_api) -> No
     assert info.company.kpp == "123456789"
 
 
-async def test_get_info_handles_missing_signings(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_get_info_handles_missing_signings(client: PodpislonClient, mock_api) -> None:
     mock_api.get("/get-info").mock(
         return_value=httpx.Response(200, json={"status": True, "company": {}})
     )
@@ -45,13 +43,9 @@ async def test_get_info_handles_missing_signings(
     assert info.company.name is None
 
 
-async def test_get_info_signings_left_tolerates_garbage(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_get_info_signings_left_tolerates_garbage(client: PodpislonClient, mock_api) -> None:
     mock_api.get("/get-info").mock(
-        return_value=httpx.Response(
-            200, json={"status": True, "signings": "n/a", "company": {}}
-        )
+        return_value=httpx.Response(200, json={"status": True, "signings": "n/a", "company": {}})
     )
 
     info = await client.company.get_info()
@@ -59,9 +53,7 @@ async def test_get_info_signings_left_tolerates_garbage(
     assert info.signings_left is None
 
 
-async def test_get_info_accepts_integer_signings(
-    client: PodpislonClient, mock_api
-) -> None:
+async def test_get_info_accepts_integer_signings(client: PodpislonClient, mock_api) -> None:
     """Regression: the live API returns ``signings`` as an int, not a string."""
 
     mock_api.get("/get-info").mock(

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import builtins
 import mimetypes
+from collections.abc import AsyncIterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, AsyncIterator, List, Mapping, Optional, Sequence, Union
+from typing import Any
 
 from podpislon._utils import (
     decode_base64_to_bytes,
@@ -24,7 +26,7 @@ from podpislon.models.document import (
 from podpislon.models.payment import Payment
 from podpislon.resources._base import Resource
 
-FileLike = Union[bytes, str, Path]
+FileLike = bytes | str | Path
 """A PDF file accepted by :meth:`DocumentsResource.add`."""
 
 
@@ -38,9 +40,9 @@ class DocumentsResource(Resource):
         self,
         *,
         page: int = 1,
-        ids: Optional[Sequence[int]] = None,
-        filter: Optional[Filter] = None,
-        expand: Optional[str] = None,
+        ids: Sequence[int] | None = None,
+        filter: Filter | None = None,
+        expand: str | None = None,
     ) -> PaginatedDocuments:
         """List documents on a single page.
 
@@ -92,9 +94,9 @@ class DocumentsResource(Resource):
     async def iter_all(
         self,
         *,
-        ids: Optional[Sequence[int]] = None,
-        filter: Optional[Filter] = None,
-        expand: Optional[str] = None,
+        ids: Sequence[int] | None = None,
+        filter: Filter | None = None,
+        expand: str | None = None,
         start_page: int = 1,
     ) -> AsyncIterator[Document]:
         """Iterate every document matching the filter, transparently paging."""
@@ -119,17 +121,17 @@ class DocumentsResource(Resource):
         phone: str,
         files: Sequence[FileLike],
         agreement: str = "Y",
-        second_name: Optional[str] = None,
-        file_names: Optional[Sequence[str]] = None,
-        contacts: Optional[Sequence[Contact]] = None,
-        payment: Optional[Payment] = None,
-        send_date: Optional[int] = None,
-        stroke_doc: Optional[int] = None,
+        second_name: str | None = None,
+        file_names: Sequence[str] | None = None,
+        contacts: Sequence[Contact] | None = None,
+        payment: Payment | None = None,
+        send_date: int | None = None,
+        stroke_doc: int | None = None,
         no_sms: bool = False,
-        redirect_url: Optional[str] = None,
-        sign_by_time: Optional[int] = None,
+        redirect_url: str | None = None,
+        sign_by_time: int | None = None,
         use_multipart: bool = True,
-        extra_fields: Optional[Mapping[str, Any]] = None,
+        extra_fields: Mapping[str, Any] | None = None,
     ) -> AddDocumentResult:
         """Upload one or more PDFs and start the signing flow.
 
@@ -265,7 +267,7 @@ class DocumentsResource(Resource):
     # ------------------------------------------------------------------
     # POST /resend/{package_id}  — resend signing link
     # ------------------------------------------------------------------
-    async def resend(self, package_id: str, *, contact: Optional[str] = None) -> dict[str, Any]:
+    async def resend(self, package_id: str, *, contact: str | None = None) -> dict[str, Any]:
         """Resend the signing link to a specific contact.
 
         ``contact`` is the signer's ``sid`` (server-assigned ID) returned by
@@ -327,8 +329,8 @@ class DocumentsResource(Resource):
     @staticmethod
     def _build_multipart_files(
         files: Sequence[FileLike],
-        file_names: Optional[Sequence[str]] = None,
-    ) -> list[tuple[str, tuple[str, bytes, str]]]:
+        file_names: Sequence[str] | None = None,
+    ) -> builtins.list[tuple[str, tuple[str, bytes, str]]]:
         """Materialise ``files`` into the tuple form expected by httpx.
 
         The Podpislon API only accepts PDF (per the OpenAPI spec); we still
@@ -352,13 +354,11 @@ class DocumentsResource(Resource):
     @staticmethod
     def _resolve_file_names(
         files: Sequence[FileLike],
-        file_names: Optional[Sequence[str]],
+        file_names: Sequence[str] | None,
     ) -> Sequence[str]:
         if file_names is not None:
             if len(file_names) != len(files):
-                raise PodpislonValidationError(
-                    "file_names must have the same length as files"
-                )
+                raise PodpislonValidationError("file_names must have the same length as files")
             return list(file_names)
 
         resolved: list[str] = []

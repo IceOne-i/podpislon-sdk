@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.21", "hatch-vcs>=0.4"]
+requires = ["hatchling>=1.33", "hatch-vcs>=0.5"]
 build-backend = "hatchling.build"
 
 [project]
@@ -7,7 +7,7 @@ name = "podpislon-sdk"
 dynamic = ["version"]
 description = "Unofficial async Python SDK for the Podpislon (podpislon.ru) document signing API"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
     { name = "Nikita Belan", email = "nikitabelan9@gmail.com" }
@@ -32,11 +32,10 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Office/Business",
@@ -45,20 +44,20 @@ classifiers = [
     "Natural Language :: English",
 ]
 dependencies = [
-    "httpx>=0.25",
-    "pydantic>=2.5",
-    "typing-extensions>=4.7; python_version < '3.11'",
+    "httpx>=0.28.1",
+    "pydantic>=2.14.4",
+    "typing-extensions>=4.16; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
-fastapi = ["fastapi>=0.100"]
+fastapi = ["fastapi>=0.165"]
 dev = [
-    "pytest>=7.4",
-    "pytest-asyncio>=0.23",
-    "pytest-cov>=4.1",
-    "respx>=0.20",
-    "ruff>=0.4",
-    "mypy>=1.8",
+    "pytest>=9.2",
+    "pytest-asyncio>=1.5",
+    "pytest-cov>=7.1",
+    "respx>=0.23.1",
+    "ruff>=0.17.6",
+    "mypy>=2.4.1",
 ]
 
 [project.urls]
@@ -103,6 +102,7 @@ minversion = "7.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 branch = true
@@ -110,14 +110,14 @@ source = ["podpislon"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "C4", "SIM", "RUF"]
-ignore = ["E501"]
+ignore = ["E501", "RUF001"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.14"
 strict = true
 warn_unreachable = true
 warn_unused_ignores = true

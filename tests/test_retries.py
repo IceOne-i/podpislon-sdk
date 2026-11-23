@@ -11,15 +11,12 @@ request — i.e. on connect-side errors and on pre-handler statuses
 
 from __future__ import annotations
 
-import asyncio
-
 import httpx
 import pytest
 import respx
 
 from podpislon import (
     PodpislonClient,
-    PodpislonRateLimitError,
     PodpislonServerError,
     PodpislonTransportError,
 )
@@ -65,9 +62,7 @@ def test_policy_retries_connect_error_on_post() -> None:
     policy = RetryPolicy(max_retries=3)
     request = httpx.Request("POST", "https://example.com/")
     assert policy.should_retry_exception("POST", httpx.ConnectError("dns", request=request))
-    assert policy.should_retry_exception(
-        "POST", httpx.ConnectTimeout("timeout", request=request)
-    )
+    assert policy.should_retry_exception("POST", httpx.ConnectTimeout("timeout", request=request))
 
 
 def test_policy_does_not_retry_read_timeout_on_post() -> None:
@@ -75,21 +70,23 @@ def test_policy_does_not_retry_read_timeout_on_post() -> None:
     request = httpx.Request("POST", "https://example.com/")
     # ReadTimeout means the server may already be processing the request —
     # replaying could create a duplicate.
-    assert policy.should_retry_exception(
-        "POST", httpx.ReadTimeout("read timed out", request=request)
-    ) is False
-    assert policy.should_retry_exception(
-        "POST", httpx.RemoteProtocolError("broken pipe", request=request)
-    ) is False
+    assert (
+        policy.should_retry_exception("POST", httpx.ReadTimeout("read timed out", request=request))
+        is False
+    )
+    assert (
+        policy.should_retry_exception(
+            "POST", httpx.RemoteProtocolError("broken pipe", request=request)
+        )
+        is False
+    )
 
 
 def test_policy_retries_any_transport_exc_on_get() -> None:
     policy = RetryPolicy(max_retries=3)
     request = httpx.Request("GET", "https://example.com/")
     assert policy.should_retry_exception("GET", httpx.ReadTimeout("x", request=request))
-    assert policy.should_retry_exception(
-        "GET", httpx.RemoteProtocolError("x", request=request)
-    )
+    assert policy.should_retry_exception("GET", httpx.RemoteProtocolError("x", request=request))
 
 
 # ---------------------------------------------------------------------------

@@ -110,9 +110,7 @@ async def test_handler_wildcard_listener() -> None:
     async def audit(event):  # type: ignore[no-untyped-def]
         seen.append(event.event.value)
 
-    await handler.dispatch(
-        b"EVENT=DOCUMENT_SIGNED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x"
-    )
+    await handler.dispatch(b"EVENT=DOCUMENT_SIGNED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x")
     await handler.dispatch(
         b"EVENT=DOCUMENT_OPENED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x&CONTACT=%2B79"
     )
@@ -121,9 +119,7 @@ async def test_handler_wildcard_listener() -> None:
 
 async def test_handler_no_listeners_is_noop() -> None:
     handler = WebhookHandler()
-    event = await handler.dispatch(
-        b"EVENT=DOCUMENT_SIGNED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x"
-    )
+    event = await handler.dispatch(b"EVENT=DOCUMENT_SIGNED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x")
     assert isinstance(event, DocumentSignedEvent)
 
 
@@ -196,7 +192,5 @@ async def test_handler_runs_handlers_in_order() -> None:
     async def third(event):  # type: ignore[no-untyped-def]
         order.append("third")
 
-    await handler.dispatch(
-        b"EVENT=DOCUMENT_SIGNED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x"
-    )
+    await handler.dispatch(b"EVENT=DOCUMENT_SIGNED&FILE_ID=1&COMPANY_ID=2&SIGNATURE=x")
     assert order == ["first", "second", "third"]

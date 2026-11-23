@@ -77,7 +77,7 @@ pip install "podpislon-sdk[fastapi]"
 pip install "podpislon-sdk[dev]"
 ```
 
-Поддерживаемые версии Python: **3.9 — 3.13**.
+Поддерживаемые версии Python: **3.11 — 3.14**. Для разработки используется **Python 3.14** и `uv`.
 
 ---
 
@@ -568,21 +568,17 @@ podpislon/
 git clone https://github.com/IceOne-i/podpislon-sdk.git
 cd podpislon-sdk
 
-python -m venv .venv
-source .venv/bin/activate           # Linux / macOS
-# .venv\Scripts\activate            # Windows
-
-pip install -e ".[dev]"
+uv sync --python 3.14 --extra dev --extra fastapi
 
 # тесты с покрытием
-pytest --cov=podpislon
+uv run pytest --cov=podpislon
 
 # линт и формат
-ruff check src tests
-ruff format src tests
+uv run ruff check src tests
+uv run ruff format src tests
 
 # type-checking
-mypy src
+uv run mypy src
 ```
 
 ---
@@ -610,7 +606,7 @@ GitHub Actions подхватит тег, соберёт `sdist` + `wheel` и о
 
 В репозитории два workflow:
 
-1. `.github/workflows/tests.yml` — на каждый PR/push прогоняет тесты на Python 3.9 — 3.13.
+1. `.github/workflows/tests.yml` — на каждый PR/push прогоняет тесты на Python 3.11 — 3.14.
 2. `.github/workflows/publish.yml` — на каждый push тега `v*` собирает дистрибутивы и публикует их на PyPI через [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (без хранения токенов в репозитории).
 
 Чтобы включить публикацию:

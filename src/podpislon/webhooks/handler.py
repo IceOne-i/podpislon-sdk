@@ -7,12 +7,12 @@ so wiring it into FastAPI / aiohttp / aiogram / Sanic is a one-liner.
 
 from __future__ import annotations
 
-import asyncio
 import hmac
 import inspect
 import logging
 from collections import defaultdict
-from typing import Any, Awaitable, Callable, DefaultDict, List, Optional, Type, Union
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from podpislon.enums import WebhookEventType
 from podpislon.exceptions import PodpislonWebhookSignatureError
@@ -23,12 +23,8 @@ from podpislon.models.webhook import (
 )
 from podpislon.webhooks.parser import WebhookPayload, parse_event
 
-EventModel = Union[
-    DocumentOpenedEvent,
-    DocumentSignedEvent,
-    ClientDataRequestSubmittedEvent,
-]
-EventHandler = Callable[[EventModel], Union[None, Awaitable[None]]]
+EventModel = DocumentOpenedEvent | DocumentSignedEvent | ClientDataRequestSubmittedEvent
+EventHandler = Callable[[EventModel], Awaitable[None] | None]
 
 _LOGGER = logging.getLogger("podpislon.webhooks")
 
@@ -51,7 +47,7 @@ class WebhookSignatureVerifier:
         self,
         secret: str,
         *,
-        compute: Optional[Callable[[bytes, str], str]] = None,
+        compute: Callable[[bytes, str], str] | None = None,
     ) -> None:
         if not secret:
             raise ValueError("secret must be a non-empty string")
@@ -97,10 +93,10 @@ class WebhookHandler:
     def __init__(
         self,
         *,
-        signature_verifier: Optional[WebhookSignatureVerifier] = None,
+        signature_verifier: WebhookSignatureVerifier | None = None,
     ) -> None:
-        self._handlers: DefaultDict[WebhookEventType, List[EventHandler]] = defaultdict(list)
-        self._wildcard_handlers: List[EventHandler] = []
+        self._handlers: defaultdict[WebhookEventType, list[EventHandler]] = defaultdict(list)
+        self._wildcard_handlers: list[EventHandler] = []
         self._signature_verifier = signature_verifier
 
     # ------------------------------------------------------------------
@@ -143,7 +139,7 @@ class WebhookHandler:
         self,
         payload: WebhookPayload,
         *,
-        raw_body: Optional[bytes] = None,
+        raw_body: bytes | None = None,
     ) -> EventModel:
         """Parse, verify and dispatch a payload. Returns the parsed event."""
 
@@ -170,9 +166,7 @@ class WebhookHandler:
     async def _run_handlers(self, event: EventModel) -> None:
         handlers = list(self._handlers.get(event.event, ())) + list(self._wildcard_handlers)
         if not handlers:
-            _LOGGER.debug(
-                "Received %s but no handlers are registered", event.event.value
-            )
+            _LOGGER.debug("Received %s but no handlers are registered", event.event.value)
             return
 
         for handler in handlers:
@@ -191,7 +185,7 @@ class WebhookHandler:
     # ------------------------------------------------------------------
     # Inspection helpers
     # ------------------------------------------------------------------
-    def listeners_for(self, event_type: WebhookEventType) -> List[EventHandler]:
+    def listeners_for(self, event_type: WebhookEventType) -> list[EventHandler]:
         return list(self._handlers.get(event_type, ()))
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic only
@@ -200,5 +194,5 @@ class WebhookHandler:
 
 
 # Re-export for convenience: callers often need only these symbols.
-HandlerT: Type[Any] = WebhookHandler
+HandlerT: type[Any] = WebhookHandler
 """Alias kept for typing convenience in user code."""
